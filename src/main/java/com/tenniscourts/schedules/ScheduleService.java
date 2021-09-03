@@ -1,10 +1,14 @@
 package com.tenniscourts.schedules;
 
+import com.tenniscourts.exceptions.EntityNotFoundException;
+import com.tenniscourts.tenniscourts.TennisCourt;
+import com.tenniscourts.tenniscourts.TennisCourtRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -14,9 +18,22 @@ public class ScheduleService {
 
     private final ScheduleMapper scheduleMapper;
 
+    private final TennisCourtRepository tennisCourtRepository;
+
     public ScheduleDTO addSchedule(Long tennisCourtId, CreateScheduleRequestDTO createScheduleRequestDTO) {
-        //TODO: implement addSchedule
-        return null;
+        // Try to find the tennis court; throw EntityNotFoundException otherwise
+        Optional<TennisCourt> tennisCourt = Optional.of(tennisCourtRepository.findById(tennisCourtId).orElseThrow(() -> new EntityNotFoundException("Court not found")));
+
+        // The use case doesn't mention whether the code should validate already existing schedules for that court/time slot,
+        // therefore it's simply overriding whatever it's already there in the database.
+
+        // Create new schedule entity
+        Schedule schedule = new Schedule();
+        schedule.setTennisCourt(tennisCourt.get());
+        schedule.setStartDateTime(createScheduleRequestDTO.getStartDateTime());
+        schedule.setEndDateTime(createScheduleRequestDTO.getStartDateTime().plusHours(1L));
+
+        return scheduleMapper.map(scheduleRepository.save(schedule));
     }
 
     public List<ScheduleDTO> findSchedulesByDates(LocalDateTime startDate, LocalDateTime endDate) {
