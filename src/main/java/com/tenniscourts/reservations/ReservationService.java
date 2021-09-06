@@ -1,6 +1,12 @@
 package com.tenniscourts.reservations;
 
 import com.tenniscourts.exceptions.EntityNotFoundException;
+import com.tenniscourts.guests.GuestDTO;
+import com.tenniscourts.guests.GuestMapper;
+import com.tenniscourts.guests.GuestService;
+import com.tenniscourts.schedules.ScheduleDTO;
+import com.tenniscourts.schedules.ScheduleMapper;
+import com.tenniscourts.schedules.ScheduleService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,12 +18,38 @@ import java.time.temporal.ChronoUnit;
 @AllArgsConstructor
 public class ReservationService {
 
+    private static final BigDecimal DEPOSIT_VALUE = BigDecimal.TEN;
+
     private final ReservationRepository reservationRepository;
 
     private final ReservationMapper reservationMapper;
 
+    private final GuestService guestService;
+
+    private final GuestMapper guestMapper;
+
+    private final ScheduleService scheduleService;
+
+    private final ScheduleMapper scheduleMapper;
+
     public ReservationDTO bookReservation(CreateReservationRequestDTO createReservationRequestDTO) {
-        throw new UnsupportedOperationException();
+        // Try to find the guest; the guest service throws EntityNotFoundException otherwise
+        GuestDTO guestDTO = guestService.findGuest(createReservationRequestDTO.getGuestId());
+
+        // Try to find the schedule; the schedule service throws EntityNotFoundException otherwise
+        ScheduleDTO scheduleDTO = scheduleService.findSchedule(createReservationRequestDTO.getScheduleId());
+
+        // Create a Reservation entity and save it
+        Reservation reservation =
+                Reservation.builder().reservationStatus(ReservationStatus.READY_TO_PLAY).value(DEPOSIT_VALUE)
+                           .refundValue(DEPOSIT_VALUE).guest(guestMapper.map(guestDTO))
+                           .schedule(scheduleMapper.map(scheduleDTO)).build();
+        ReservationDTO reservationDTO = reservationMapper.map(reservationRepository.save(reservation));
+
+        // Add the new reservation to the respective schedule (in Spring transaction management we trust)
+        scheduleService.updateSchedule(scheduleDTO.getId(), reservation);
+
+        return reservationDTO;
     }
 
     public ReservationDTO findReservation(Long reservationId) {

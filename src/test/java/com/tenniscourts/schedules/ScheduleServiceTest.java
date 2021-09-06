@@ -1,10 +1,9 @@
 package com.tenniscourts.schedules;
 
-import com.tenniscourts.tenniscourts.TennisCourt;
-import com.tenniscourts.tenniscourts.TennisCourtDTO;
-import com.tenniscourts.tenniscourts.TennisCourtRepository;
+import com.tenniscourts.TestDataFactory;
+import com.tenniscourts.exceptions.EntityNotFoundException;
+import com.tenniscourts.tenniscourts.*;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +17,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest
@@ -36,47 +34,43 @@ public class ScheduleServiceTest {
     ScheduleRepository scheduleRepository;
 
     @Mock
-    TennisCourtRepository tennisCourtRepository;
+    TennisCourtService tennisCourtService;
 
-    Schedule schedule;
-    ScheduleDTO scheduleDTO;
-    TennisCourt tennisCourt;
-    CreateScheduleRequestDTO createScheduleRequestDTO;
-
-    @Before
-    public void setUp() {
-        // Preparing objects to be used in the addSchedule test
-        tennisCourt = new TennisCourt();
-        tennisCourt.setName("Arthur Ashe Stadium");
-        tennisCourt.setId(123L);
-        TennisCourtDTO tennisCourtDTO = new TennisCourtDTO();
-        tennisCourtDTO.setName(tennisCourt.getName());
-        tennisCourtDTO.setId(tennisCourt.getId());
-        createScheduleRequestDTO = new CreateScheduleRequestDTO();
-        createScheduleRequestDTO.setStartDateTime(LocalDateTime.now());
-        createScheduleRequestDTO.setTennisCourtId(tennisCourt.getId());
-        schedule = new Schedule();
-        LocalDateTime startDateTime = LocalDateTime.now();
-        schedule.setStartDateTime(startDateTime);
-        schedule.setEndDateTime(startDateTime.plusHours(1L));
-        schedule.setTennisCourt(tennisCourt);
-        scheduleDTO = new ScheduleDTO();
-        scheduleDTO.setTennisCourt(tennisCourtDTO);
-        scheduleDTO.setStartDateTime(schedule.getStartDateTime());
-        scheduleDTO.setEndDateTime(schedule.getEndDateTime());
-    }
+    @Mock
+    TennisCourtMapper tennisCourtMapper;
 
     @Test
     public void addSchedule() {
-        Optional<TennisCourt> optionalTennisCourt = Optional.of(tennisCourt);
-        Mockito.doReturn(optionalTennisCourt).when(tennisCourtRepository).findById(Mockito.anyLong());
-        Mockito.doReturn(schedule).when(scheduleRepository).save(Mockito.any(Schedule.class));
-        Mockito.doReturn(scheduleDTO).when(scheduleMapper).map(Mockito.any(Schedule.class));
+        TennisCourtDTO tennisCourtDTO = TestDataFactory.createTennisCourtDTO("Arthur Ashe Stadium", 123L);
+        Mockito.doReturn(tennisCourtDTO).when(tennisCourtService).findTennisCourtById(Mockito.anyLong());
+        Mockito.doReturn(new TennisCourt()).when(tennisCourtMapper).map(Mockito.any(TennisCourtDTO.class));
+        Mockito.doReturn(TestDataFactory.createSchedule(LocalDateTime.now(), "Arthur Ashe Stadium"))
+               .when(scheduleRepository).save(Mockito.any(Schedule.class));
+        Mockito.doReturn(TestDataFactory.createScheduleDTO(444L, LocalDateTime.now(), tennisCourtDTO))
+               .when(scheduleMapper)
+               .map(Mockito.any(Schedule.class));
 
-        ScheduleDTO response = scheduleService.addSchedule(tennisCourt.getId(), createScheduleRequestDTO);
+        CreateScheduleRequestDTO createScheduleRequestDTO = new CreateScheduleRequestDTO();
+        createScheduleRequestDTO.setStartDateTime(LocalDateTime.now());
+        createScheduleRequestDTO.setTennisCourtId(tennisCourtDTO.getId());
+        ScheduleDTO response = scheduleService.addSchedule(tennisCourtDTO.getId(), createScheduleRequestDTO);
 
+        Assert.assertNotNull(response);
         Assert.assertEquals(response.getTennisCourt().getId(), createScheduleRequestDTO.getTennisCourtId());
-        Assert.assertEquals(response.getStartDateTime().truncatedTo(ChronoUnit.MINUTES), createScheduleRequestDTO.getStartDateTime().truncatedTo(ChronoUnit.MINUTES));
-        Assert.assertEquals(response.getEndDateTime().truncatedTo(ChronoUnit.MINUTES), createScheduleRequestDTO.getStartDateTime().plusHours(1L).truncatedTo(ChronoUnit.MINUTES));
+        Assert.assertEquals(response.getStartDateTime().truncatedTo(ChronoUnit.MINUTES),
+                            createScheduleRequestDTO.getStartDateTime().truncatedTo(ChronoUnit.MINUTES));
+        Assert.assertEquals(response.getEndDateTime().truncatedTo(ChronoUnit.MINUTES),
+                            createScheduleRequestDTO.getStartDateTime().plusHours(1L).truncatedTo(ChronoUnit.MINUTES));
+    }
+
+    @Test(expected = com.tenniscourts.exceptions.EntityNotFoundException.class)
+    public void addScheduleTennisCourtNotFound() {
+        Mockito.doThrow(new EntityNotFoundException("Tennis Court not found")).when(tennisCourtService)
+               .findTennisCourtById(Mockito.anyLong());
+
+        CreateScheduleRequestDTO createScheduleRequestDTO = new CreateScheduleRequestDTO();
+        createScheduleRequestDTO.setStartDateTime(LocalDateTime.now());
+        createScheduleRequestDTO.setTennisCourtId(123L);
+        scheduleService.addSchedule(123L, createScheduleRequestDTO);
     }
 }
