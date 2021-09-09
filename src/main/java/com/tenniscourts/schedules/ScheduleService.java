@@ -1,5 +1,6 @@
 package com.tenniscourts.schedules;
 
+import com.tenniscourts.exceptions.AlreadyExistsEntityException;
 import com.tenniscourts.exceptions.EntityNotFoundException;
 import com.tenniscourts.reservations.Reservation;
 import com.tenniscourts.tenniscourts.TennisCourtDTO;
@@ -28,16 +29,23 @@ public class ScheduleService {
         // Try to find the tennis court; tennis court service throws EntityNotFoundException otherwise
         TennisCourtDTO tennisCourtDTO = tennisCourtService.findTennisCourtById(tennisCourtId);
 
-        // The use case doesn't mention whether the code should validate already existing schedules for that court/time slot,
-        // therefore it's simply overriding whatever it's already there in the database.
-
-        // Create a Schedule entity
-        Schedule schedule = new Schedule();
-        schedule.setTennisCourt(tennisCourtMapper.map(tennisCourtDTO));
-        schedule.setStartDateTime(createScheduleRequestDTO.getStartDateTime());
-        schedule.setEndDateTime(createScheduleRequestDTO.getStartDateTime().plusHours(1L));
-
-        return scheduleMapper.map(scheduleRepository.save(schedule));
+        // Validate whether the new schedule can be created (tennis court/date/time constraints)
+        Schedule schedule =
+                scheduleRepository.findFirstByTennisCourt_IdAndStartDateTimeBetween(tennisCourtId,
+                                                                                    createScheduleRequestDTO.getStartDateTime()
+                                                                                                            .minusMinutes(
+                                                                                                                    59L),
+                                                                                    createScheduleRequestDTO.getStartDateTime()
+                                                                                                            .plusMinutes(
+                                                                                                                    59L));
+        if (schedule != null) {
+            throw new AlreadyExistsEntityException(
+                    "Schedule already exists or there's a time conflict with an existing schedule");
+        }
+        return scheduleMapper.map(scheduleRepository.save(
+                Schedule.builder().tennisCourt(tennisCourtMapper.map(tennisCourtDTO))
+                        .startDateTime(createScheduleRequestDTO.getStartDateTime())
+                        .endDateTime(createScheduleRequestDTO.getStartDateTime().plusHours(1L)).build()));
     }
 
     public ScheduleDTO updateSchedule(Long scheduleId, Reservation reservation) {
@@ -48,13 +56,13 @@ public class ScheduleService {
         return scheduleMapper.map(scheduleRepository.save(schedule));
     }
 
-    public List<ScheduleDTO> findSchedulesByDates(LocalDateTime startDate, LocalDateTime endDate) {
-        //TODO: implement
-        return null;
+    public List<ScheduleDTO> findSchedulesByDates(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        return scheduleMapper.map(scheduleRepository.findByStartDateTimeBetween(startDateTime, endDateTime));
     }
 
     public ScheduleDTO findSchedule(Long scheduleId) {
-        Optional<Schedule> schedule = Optional.of(scheduleRepository.findById(scheduleId).orElseThrow(() -> new EntityNotFoundException("Schedule not found")));
+        Optional<Schedule> schedule = Optional.of(scheduleRepository.findById(scheduleId).orElseThrow(
+                () -> new EntityNotFoundException("Schedule not found")));
         return scheduleMapper.map(schedule.get());
     }
 

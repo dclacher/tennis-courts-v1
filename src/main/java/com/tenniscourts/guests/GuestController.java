@@ -77,8 +77,7 @@ public class GuestController extends BaseRestController {
     @ApiOperation(value = "listGuestsByName", tags = "List guests by name", response = ResponseEntity.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Operation completed successfully"),
-            @ApiResponse(code = 400, message = "Operation not completed - bad request"),
-            @ApiResponse(code = 404, message = "No guests found under that name")})
+            @ApiResponse(code = 400, message = "Operation not completed - bad request")})
     public ResponseEntity<List<GuestDTO>> listGuestsByName(
             @ApiParam(value = "Guest name", required = true) @RequestParam("name") String guestName) {
         Optional<List<GuestDTO>> optionalGuestDTOList = Optional.of(guestService.findGuestsByName(guestName));

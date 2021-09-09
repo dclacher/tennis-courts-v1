@@ -143,14 +143,15 @@ public class GuestServiceTest {
 
     @Test
     public void findGuestsByName() {
-        Guest guest1 = TestDataFactory.createGuest("Venus Williams");
-        Optional<List<Guest>> guests = Optional.of(List.of(guest1));
+        List<Guest> guests = List.of(TestDataFactory.createGuest("Venus Williams"));
+        List<GuestDTO> guestsDTO = List.of(TestDataFactory.createGuestDTO("Venus Williams", 111L));
         Mockito.doReturn(guests).when(guestRepository).findGuestsByNameOrderById(Mockito.anyString());
+        Mockito.doReturn(guestsDTO).when(guestMapper).map(Mockito.anyList());
 
         List<GuestDTO> response = guestService.findGuestsByName("Venus Williams");
 
         Assert.assertNotNull(response);
-        Assert.assertEquals(response.size(), guests.get().size());
+        Assert.assertEquals(response.size(), guests.size());
     }
 
     @Test(expected = com.tenniscourts.exceptions.EntityNotFoundException.class)

@@ -47,10 +47,6 @@ public class GuestService {
     }
 
     public List<GuestDTO> findGuestsByName(String name) {
-        Optional<List<Guest>> guests = Optional.of(guestRepository.findGuestsByNameOrderById(name).orElseThrow(
-                () -> new EntityNotFoundException("Guests not found using provided name")));
-        List<GuestDTO> response = new ArrayList<>();
-        guests.get().forEach(g -> response.add(guestMapper.map(g)));
-        return response;
+        return guestMapper.map(guestRepository.findGuestsByNameOrderById(name));
     }
 }
