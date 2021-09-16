@@ -46,10 +46,8 @@ public class GuestController extends BaseRestController {
             @ApiResponse(code = 400, message = "Operation not completed - bad request"),
             @ApiResponse(code = 404, message = "Guest not found")})
     public ResponseEntity<GuestDTO> updateGuest(
-            @ApiParam(value = "Guest ID", required = true) @PathVariable(name = "id") Long guestId,
             @ApiParam(value = "Update guest", required = true) @RequestBody GuestDTO guestRequestDTO) {
-        return ResponseEntity.created(locationByEntity(guestService.updateGuest(guestId, guestRequestDTO).getId()))
-                             .build();
+        return ResponseEntity.created(locationByEntity(guestService.updateGuest(guestRequestDTO).getId())).build();
     }
 
     @DeleteMapping("/{id}")

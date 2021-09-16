@@ -18,6 +18,7 @@ import javax.validation.constraints.NotNull;
 @ApiModel(description = "Representation of a guest")
 public class GuestDTO {
 
+    @NotNull
     @ApiModelProperty(notes = "The ID of the guest", example = "1")
     private Long id;
 

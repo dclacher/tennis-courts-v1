@@ -81,7 +81,7 @@ public class GuestServiceTest {
         Mockito.doReturn(new Guest()).when(guestRepository).saveAndFlush(Mockito.any(Guest.class));
         Mockito.doReturn(updatedGuestDTO).when(guestMapper).map(Mockito.any(Guest.class));
 
-        GuestDTO response = guestService.updateGuest(guestDTO.getId(), updatedGuestDTO);
+        GuestDTO response = guestService.updateGuest(updatedGuestDTO);
 
         Assert.assertNotNull(response);
         Assert.assertEquals(response.getName(), updatedGuestDTO.getName());
@@ -93,7 +93,7 @@ public class GuestServiceTest {
         Mockito.doThrow(new EntityNotFoundException("Guest not found")).when(guestRepository)
                .findById(Mockito.anyLong());
 
-        guestService.updateGuest(guestDTO.getId(), guestDTO);
+        guestService.updateGuest(guestDTO);
     }
 
     @Test
