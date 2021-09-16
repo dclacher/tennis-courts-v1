@@ -23,8 +23,9 @@ public class GuestController extends BaseRestController {
             @ApiResponse(code = 201, message = "Operation completed successfully"),
             @ApiResponse(code = 400, message = "Operation not completed - bad request")})
     public ResponseEntity<Void> addGuest(
-            @ApiParam(value = "Create guest", required = true) @RequestBody GuestDTO guestDTO) {
-        return ResponseEntity.created(locationByEntity(guestService.addGuest(guestDTO).getId())).build();
+            @ApiParam(value = "Create guest", required = true) @RequestBody
+                    CreateGuestRequestDTO createGuestRequestDTO) {
+        return ResponseEntity.created(locationByEntity(guestService.addGuest(createGuestRequestDTO).getId())).build();
     }
 
     @GetMapping("/{id}")

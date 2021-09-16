@@ -16,8 +16,8 @@ public class GuestService {
 
     private final GuestMapper guestMapper;
 
-    public GuestDTO addGuest(GuestDTO guestDTO) {
-        return guestMapper.map(guestRepository.saveAndFlush(guestMapper.map(guestDTO)));
+    public GuestDTO addGuest(CreateGuestRequestDTO createGuestRequestDTO) {
+        return guestMapper.map(guestRepository.saveAndFlush(guestMapper.map(createGuestRequestDTO)));
     }
 
     public GuestDTO findGuest(Long guestId) {

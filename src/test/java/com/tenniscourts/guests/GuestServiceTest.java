@@ -36,12 +36,13 @@ public class GuestServiceTest {
 
     @Test
     public void addGuest() {
+        CreateGuestRequestDTO createGuestRequestDTO = TestDataFactory.createGuestRequestDTO("Pete Sampras");
         GuestDTO guestDTO = TestDataFactory.createGuestDTO("Pete Sampras", 22L);
-        Mockito.doReturn(new Guest()).when(guestMapper).map(Mockito.any(GuestDTO.class));
+        Mockito.doReturn(new Guest()).when(guestMapper).map(Mockito.any(CreateGuestRequestDTO.class));
         Mockito.doReturn(new Guest()).when(guestRepository).saveAndFlush(Mockito.any(Guest.class));
         Mockito.doReturn(guestDTO).when(guestMapper).map(Mockito.any(Guest.class));
 
-        GuestDTO response = guestService.addGuest(guestDTO);
+        GuestDTO response = guestService.addGuest(createGuestRequestDTO);
 
         Assert.assertNotNull(response);
         Assert.assertEquals(response.getName(), guestDTO.getName());

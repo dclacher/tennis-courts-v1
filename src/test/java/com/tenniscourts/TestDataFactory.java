@@ -1,5 +1,6 @@
 package com.tenniscourts;
 
+import com.tenniscourts.guests.CreateGuestRequestDTO;
 import com.tenniscourts.guests.Guest;
 import com.tenniscourts.guests.GuestDTO;
 import com.tenniscourts.reservations.Reservation;
@@ -20,6 +21,10 @@ public class TestDataFactory {
 
     public static GuestDTO createGuestDTO(String name, Long id) {
         return GuestDTO.builder().name(name).id(id).build();
+    }
+
+    public static CreateGuestRequestDTO createGuestRequestDTO(String name) {
+        return CreateGuestRequestDTO.builder().name(name).build();
     }
 
     public static Guest createGuest(String name) {
