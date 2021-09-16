@@ -22,6 +22,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest
@@ -49,6 +50,50 @@ public class ReservationServiceTest {
 
     @Mock
     ScheduleMapper scheduleMapper;
+
+    @Test
+    public void rescheduleReservation() {
+        GuestDTO guestDTO = TestDataFactory.createGuestDTO("John Doe", 511L);
+        TennisCourtDTO tennisCourtDTO = TestDataFactory.createTennisCourtDTO("Court 40", 402L);
+        ScheduleDTO oldScheduleDTO =
+                TestDataFactory.createScheduleDTO(61L, LocalDateTime.now().plusDays(1L), tennisCourtDTO);
+        ScheduleDTO newScheduleDTO =
+                TestDataFactory.createScheduleDTO(62L, LocalDateTime.now().plusDays(2L), tennisCourtDTO);
+        Reservation previousReservation = TestDataFactory.createReservation(guestDTO, oldScheduleDTO, tennisCourtDTO);
+        ReservationDTO newReservationDTO = TestDataFactory.createReservationDTO(141L, guestDTO, newScheduleDTO);
+        previousReservation.setId(131L);
+
+        Mockito.doReturn(Optional.of(previousReservation)).when(reservationRepository).findById(Mockito.anyLong());
+        Mockito.doReturn(previousReservation).when(reservationRepository).save(Mockito.any(Reservation.class));
+        Mockito.doReturn(newReservationDTO).when(reservationMapper).map(Mockito.any(Reservation.class));
+        Mockito.doReturn(newScheduleDTO).when(scheduleService).findSchedule(Mockito.anyLong());
+
+        ReservationDTO response = reservationService.rescheduleReservation(131L, newScheduleDTO.getId());
+
+        Assert.assertEquals(ReservationStatus.READY_TO_PLAY.name(), response.getReservationStatus());
+        Assert.assertNotNull(response.getPreviousReservation());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rescheduleReservation_sameScheduleId() {
+        GuestDTO guestDTO = TestDataFactory.createGuestDTO("John Wayne", 51L);
+        TennisCourtDTO tennisCourtDTO = TestDataFactory.createTennisCourtDTO("Court 40", 40L);
+        ScheduleDTO scheduleDTO = TestDataFactory.createScheduleDTO(99L, LocalDateTime.now(), tennisCourtDTO);
+        Reservation previousReservation = TestDataFactory.createReservation(guestDTO, scheduleDTO, tennisCourtDTO);
+        previousReservation.setId(111L);
+
+        Mockito.doReturn(Optional.of(previousReservation)).when(reservationRepository).findById(Mockito.anyLong());
+
+        reservationService.rescheduleReservation(111L, scheduleDTO.getId());
+    }
+
+    @Test(expected = com.tenniscourts.exceptions.EntityNotFoundException.class)
+    public void rescheduleReservation_ReservationNotFound() {
+        Mockito.doThrow(new EntityNotFoundException("Reservation not found")).when(reservationRepository)
+               .findById(Mockito.anyLong());
+
+        reservationService.rescheduleReservation(100L, 1L);
+    }
 
     @Test
     public void bookReservation() {

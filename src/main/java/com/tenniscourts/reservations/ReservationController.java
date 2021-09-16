@@ -4,10 +4,7 @@ import com.tenniscourts.config.BaseRestController;
 import io.swagger.annotations.*;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @AllArgsConstructor
 @RestController
@@ -37,7 +34,15 @@ public class ReservationController extends BaseRestController {
         return ResponseEntity.ok(reservationService.cancelReservation(reservationId));
     }
 
-    public ResponseEntity<ReservationDTO> rescheduleReservation(Long reservationId, Long scheduleId) {
+    @PutMapping("/{id}")
+    @ApiOperation(value = "rescheduleReservation", tags = "Reschedule a reservation", response = ResponseEntity.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 201, message = "Operation completed successfully"),
+            @ApiResponse(code = 400, message = "Operation not completed - bad request"),
+            @ApiResponse(code = 404, message = "Reservation or schedule not found")})
+    public ResponseEntity<ReservationDTO> rescheduleReservation(
+            @ApiParam(value = "Reservation ID", required = true) @PathVariable(name = "id") Long reservationId,
+            @ApiParam(value = "Schedule ID", required = true) @RequestParam("scheduleId") Long scheduleId) {
         return ResponseEntity.ok(reservationService.rescheduleReservation(reservationId, scheduleId));
     }
 }

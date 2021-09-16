@@ -103,22 +103,29 @@ public class ReservationService {
         return BigDecimal.ZERO;
     }
 
-    /*TODO: This method actually not fully working, find a way to fix the issue when it's throwing the error:
-            "Cannot reschedule to the same slot.*/
     public ReservationDTO rescheduleReservation(Long previousReservationId, Long scheduleId) {
-        Reservation previousReservation = cancel(previousReservationId);
+        // First, check whether the reservation exists; throw exception otherwise
+        Reservation previousReservation =
+                reservationRepository.findById(previousReservationId).orElseThrow(() -> {
+                    throw new EntityNotFoundException("Reservation not found.");
+                });
 
+        // Verify whether it's trying to reschedule for the same slot BEFORE cancelling it, so that the status is not
+        // changed if the schedule is the same
         if (scheduleId.equals(previousReservation.getSchedule().getId())) {
             throw new IllegalArgumentException("Cannot reschedule to the same slot.");
         }
 
+        // It was cancelling the reservation BEFORE checking the schedule, causing the reservation to be marked as
+        // CANCELLED at the end of the operation
+        previousReservation = cancel(previousReservationId);
         previousReservation.setReservationStatus(ReservationStatus.RESCHEDULED);
         reservationRepository.save(previousReservation);
 
-        ReservationDTO newReservation = bookReservation(CreateReservationRequestDTO.builder()
-                .guestId(previousReservation.getGuest().getId())
-                .scheduleId(scheduleId)
-                .build());
+        ReservationDTO newReservation = bookReservation(
+                CreateReservationRequestDTO.builder().guestId(previousReservation.getGuest().getId())
+                                           .scheduleId(scheduleId)
+                                           .build());
         newReservation.setPreviousReservation(reservationMapper.map(previousReservation));
         return newReservation;
     }
